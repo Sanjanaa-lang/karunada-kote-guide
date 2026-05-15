@@ -17,7 +17,7 @@ A location-aware Android heritage tourism app that acts as a **Virtual Historian
 |---|---|---|---|
 | ![BekalIn](screenshots/bekal_inside_location.jpeg) | ![Hampi](screenshots/hampi_fort.jpeg) | ![HampiIn](screenshots/hampi_inside_location.jpeg) | ![photochallenge](screenshots/photo_challenge.jpeg) |
 | Leader board |
-
+|-|
 | ![leaderboard](screenshots/leader.jpeg)
 
 | Google Developer Profile | GDP Codelabs Page 1 | GDP Codelabs Page 2 |
