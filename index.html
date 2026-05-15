@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{
+          --gold:#C9A84C;--gold-light:#E8C97A;--gold-dark:#8B6914;
+          --stone:#2C2419;--stone-mid:#4A3D2E;--stone-light:#7A6A55;
+          --parch:#F5EDD4;--parch-dark:#E8D9B0;--parch-mid:#D4C090;
+          --ink:#1A140A;--ink-mid:#3D2E1A;
+          --accent:#8B1A1A;--accent-light:#C42B2B;
+          --teal-fort:#1A4A40;--teal-light:#2D7A6A;
+        }
+        body{font-family:'Crimson Pro',serif;background:var(--parch);min-height:100vh}
+        ::-webkit-scrollbar{width:0}
+        #splash{position:fixed;inset:0;background:linear-gradient(160deg,#1C1208 0%,#2C1E08 40%,#3A2810 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100}
+        .splash-ornament{font-size:60px;margin-bottom:8px}
+        .splash-title{font-family:'Cinzel',serif;font-size:28px;color:var(--gold);text-align:center;letter-spacing:2px;line-height:1.3;font-weight:700}
+        .splash-sub{color:var(--parch-dark);font-size:15px;letter-spacing:3px;margin:8px 0 32px;text-transform:uppercase;font-style:italic}
+        .splash-divider{width:120px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:8px 0}
+        .splash-tagline{color:var(--gold-light);font-size:15px;font-style:italic;text-align:center;padding:0 30px;line-height:1.6}
+        .splash-btn{margin-top:32px;background:transparent;border:1.5px solid var(--gold);color:var(--gold);font-family:'Cinzel',serif;font-size:14px;letter-spacing:2px;padding:14px 36px;border-radius:2px;cursor:pointer}
+        .splash-version{color:var(--stone-light);font-size:11px;margin-top:20px;letter-spacing:1px}
+        #home{display:none;flex-direction:column;min-height:100vh;background:var(--parch);padding-bottom:80px;overflow-y:auto}
+        .home-header{background:var(--stone);padding:20px 20px 16px}
+        .home-title{font-family:'Cinzel',serif;color:var(--gold);font-size:20px;font-weight:700;letter-spacing:1px}
+        .home-sub{color:var(--stone-light);font-size:13px;font-style:italic;margin-top:2px}
+        .progress-bar-wrap{margin-top:12px;background:var(--stone-mid);height:4px;border-radius:2px}
+        .progress-bar-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--gold-dark),var(--gold));width:35%}
+        .progress-label{color:var(--stone-light);font-size:11px;margin-top:4px;display:flex;justify-content:space-between}
+        .section-label{font-family:'Cinzel',serif;font-size:11px;letter-spacing:2px;color:var(--stone-mid);text-transform:uppercase;padding:16px 20px 8px}
+        .fort-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 16px}
+        .fort-card{border-radius:8px;overflow:hidden;cursor:pointer;border:1.5px solid var(--parch-mid);background:white;transition:transform 0.2s}
+        .fort-card:active{transform:scale(0.97)}
+        .fort-card-img{height:110px;overflow:hidden;position:relative}
+        .fort-card-img img{width:100%;height:100%;object-fit:cover}
+        .fort-card-img .overlay{position:absolute;inset:0;background:rgba(0,0,0,0.2)}
+        .fort-card-body{padding:10px 12px}
+        .fort-card-name{font-family:'Cinzel',serif;font-size:13px;font-weight:600;color:var(--ink)}
+        .fort-card-dist{color:var(--stone-light);font-size:11px;margin-top:2px}
+        .fort-card-badge{display:inline-flex;align-items:center;gap:3px;background:var(--parch);border:1px solid var(--parch-mid);border-radius:20px;padding:2px 8px;font-size:10px;color:var(--stone-mid);margin-top:6px}
+        #fort-detail{display:none;flex-direction:column;min-height:100vh;background:var(--parch);padding-bottom:80px}
+        .fort-detail-header{background:var(--stone);padding:16px 20px;flex-shrink:0}
+        .back-btn{display:flex;align-items:center;gap:6px;color:var(--gold);font-family:'Cinzel',serif;font-size:13px;cursor:pointer;margin-bottom:10px}
+        .fort-detail-title{font-family:'Cinzel',serif;color:var(--gold);font-size:20px;font-weight:700}
+        .fort-detail-sub{color:var(--parch-dark);font-size:13px;font-style:italic;margin-top:3px;opacity:0.85}
+        #real-map{width:100%;height:340px;z-index:1}
+        .map-stats{background:white;padding:10px 16px;display:flex;gap:8px;border-top:1px solid var(--parch-mid);flex-shrink:0}
+        .map-stat{flex:1;text-align:center}
+        .map-stat-num{font-family:'Cinzel',serif;font-size:16px;color:var(--teal-light);font-weight:600}
+        .map-stat-label{font-size:10px;color:var(--stone-light);letter-spacing:0.5px}
+        #story-panel{position:fixed;left:0;right:0;bottom:0;background:var(--stone);border-radius:20px 20px 0 0;transform:translateY(100%);transition:transform 0.4s ease;z-index:200;max-height:75vh;overflow:hidden;display:flex;flex-direction:column}
+        #story-panel.open{transform:translateY(0)}
+        .panel-handle{width:40px;height:4px;background:var(--stone-mid);border-radius:2px;margin:12px auto 0}
+        .panel-header{padding:12px 20px 10px;border-bottom:1px solid var(--stone-mid);display:flex;align-items:center;gap:10px}
+        .panel-icon{width:36px;height:36px;border-radius:50%;background:var(--gold-dark);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+        .panel-icon i{color:var(--gold-light);font-size:18px}
+        .panel-title{font-family:'Cinzel',serif;color:var(--gold);font-size:14px;font-weight:600}
+        .panel-subtitle{color:var(--stone-light);font-size:11px;font-style:italic;margin-top:1px}
+        .panel-body{padding:16px 20px;overflow-y:auto;flex:1}
+        .story-text{color:var(--parch-dark);font-size:15px;line-height:1.8;font-style:italic}
+        .story-text strong{color:var(--gold-light);font-style:normal;font-family:'Cinzel',serif;font-size:13px}
+        .lang-toggle{display:flex;gap:6px;padding:0 20px 12px}
+        .lang-btn{flex:1;border:1.5px solid var(--stone-mid);background:transparent;color:var(--stone-light);font-family:'Cinzel',serif;font-size:11px;padding:6px;border-radius:4px;cursor:pointer}
+        .lang-btn.active{border-color:var(--gold);color:var(--gold)}
+        .panel-actions{display:flex;gap:10px;padding:12px 20px 16px;border-top:1px solid var(--stone-mid);flex-shrink:0}
+        .audio-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;background:var(--gold);color:var(--stone);border:none;padding:10px;border-radius:6px;font-family:'Cinzel',serif;font-size:12px;cursor:pointer;font-weight:600}
+        .audio-btn.playing{background:var(--accent)}
+        .close-btn{background:var(--stone-mid);border:none;color:var(--parch-dark);padding:10px 14px;border-radius:6px;cursor:pointer;font-size:18px}
+        .audio-wave{display:flex;align-items:center;gap:3px;height:24px}
+        .wave-bar{width:3px;border-radius:2px;background:var(--stone);animation:wave-anim 0.8s ease-in-out infinite}
+        .wave-bar:nth-child(1){height:8px}.wave-bar:nth-child(2){animation-delay:0.1s;height:16px}.wave-bar:nth-child(3){animation-delay:0.2s;height:12px}.wave-bar:nth-child(4){animation-delay:0.3s;height:20px}.wave-bar:nth-child(5){animation-delay:0.4s;height:10px}.wave-bar:nth-child(6){animation-delay:0.2s;height:14px}
+        @keyframes wave-anim{0%,100%{transform:scaleY(0.4)}50%{transform:scaleY(1)}}
+        .audio-wave.paused .wave-bar{animation-play-state:paused}
+        #challenge-screen{display:none;flex-direction:column;min-height:100vh;background:var(--stone);padding-bottom:80px;overflow-y:auto}
+        .challenge-header{padding:20px;border-bottom:1px solid var(--stone-mid)}
+        .challenge-title{font-family:'Cinzel',serif;color:var(--gold);font-size:18px;font-weight:700;margin-bottom:6px}
+        .challenge-desc{color:var(--parch-dark);font-size:13px;line-height:1.6;font-style:italic;opacity:0.85}
+        .stats-row{display:flex;gap:10px;padding:16px}
+        .stat-card{flex:1;background:var(--stone-mid);border-radius:8px;padding:12px;text-align:center}
+        .stat-num{font-family:'Cinzel',serif;font-size:22px;color:var(--gold);font-weight:600}
+        .stat-label{color:var(--stone-light);font-size:10px;letter-spacing:1px;text-transform:uppercase;margin-top:2px}
+        .challenge-list{padding:0 16px 20px}
+        .challenge-item{background:var(--stone-mid);border-radius:8px;padding:14px 16px;margin-bottom:12px;display:flex;align-items:center;gap:12px;cursor:pointer;border:1.5px solid transparent}
+        .challenge-item.done{border-color:var(--teal-light);opacity:0.7}
+        .challenge-emoji{font-size:28px;flex-shrink:0}
+        .challenge-info-name{font-family:'Cinzel',serif;color:var(--parch);font-size:13px;margin-bottom:3px}
+        .challenge-info-hint{color:var(--stone-light);font-size:12px;line-height:1.4}
+        .challenge-done-badge{margin-left:auto;flex-shrink:0;background:var(--teal-fort);border-radius:20px;padding:4px 10px;color:#9FE1CB;font-size:11px;font-family:'Cinzel',serif}
+        .challenge-points{margin-left:auto;flex-shrink:0;background:rgba(201,168,76,0.15);border-radius:20px;padding:4px 10px;color:var(--gold);font-size:11px;font-family:'Cinzel',serif}
+        #profile-screen{display:none;flex-direction:column;min-height:100vh;background:var(--stone);padding-bottom:80px;overflow-y:auto}
+        .profile-input{width:100%;background:var(--stone);border:1px solid var(--stone-light);border-radius:6px;padding:10px 12px;color:var(--parch);font-family:'Crimson Pro',serif;font-size:14px;margin-bottom:10px;outline:none}
+        .profile-input::placeholder{color:var(--stone-light)}
+        .save-btn{width:100%;background:var(--gold);color:var(--stone);border:none;padding:12px;border-radius:6px;font-family:'Cinzel',serif;font-size:13px;letter-spacing:1px;cursor:pointer;font-weight:600}
+        .nav-bar{position:fixed;bottom:0;left:0;right:0;height:65px;background:var(--stone);border-top:1px solid var(--stone-mid);display:flex;align-items:center;justify-content:space-around;z-index:10}
+        .nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:6px 12px;border-radius:8px;flex:1}
+        .nav-item.active{background:rgba(201,168,76,0.1)}
+        .nav-item i{font-size:22px;color:var(--stone-light)}
+        .nav-item.active i{color:var(--gold)}
+        .nav-item span{font-family:'Cinzel',serif;font-size:10px;color:var(--stone-light);letter-spacing:0.5px}
+        .nav-item.active span{color:var(--gold)}
+        #nearby-banner{display:none;position:fixed;top:20px;left:16px;right:16px;background:var(--stone);border:1.5px solid var(--gold);border-radius:10px;padding:12px 16px;z-index:300;align-items:center;gap:10px}
+        .leaflet-popup-content-wrapper{background:var(--stone);color:var(--parch);border:1px solid var(--gold);border-radius:8px}
+        .leaflet-popup-tip{background:var(--stone)}
+        .custom-marker{background:var(--gold);border:2px solid var(--gold-dark);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer}
+        .custom-marker.visited{background:var(--teal-light);border-color:var(--teal-fort)}
+        .custom-marker.locked{background:#888;border-color:#555;opacity:0.6}
+    </style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+    <div class="splash-ornament">🏰</div>
+    <div class="splash-divider"></div>
+    <div class="splash-title">Karunada-Kote<br>Guide</div>
+    <div class="splash-sub">Karnataka Pride</div>
+    <div class="splash-divider"></div>
+    <div class="splash-tagline">"Let the stones speak their stories.<br>Walk the forts. Hear the history."</div>
+    <button class="splash-btn" onclick="showHome()">ಪ್ರಾರಂಭಿಸಿ — Begin</button>
+    <div class="splash-version">v2.0 · Real Maps · Project 57</div>
+</div>
+
+<!-- HOME -->
+<div id="home">
+    <div class="home-header">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+                <div class="home-title">ಕರ್ನಾಡ-ಕೋಟೆ</div>
+                <div class="home-sub">Virtual Historian · Choose your fort</div>
+            </div>
+            <i class="ti ti-user-circle" style="color:var(--gold);font-size:26px;cursor:pointer" onclick="showProfile()"></i>
+        </div>
+        <div class="progress-bar-wrap"><div class="progress-bar-fill"></div></div>
+        <div class="progress-label"><span>Overall Heritage Journey</span><span id="global-pct">35% explored</span></div>
+    </div>
+
+    <div class="section-label">Select a Fort</div>
+    <div class="fort-grid">
+        <div class="fort-card" onclick="openFort('chitradurga')">
+            <div class="fort-card-img">
+                <img src="chitradurga.jpg.jfif" alt="Chitradurga Fort">
+                <div class="overlay"></div>
+            </div>
+            <div class="fort-card-body">
+                <div class="fort-card-name">Chitradurga</div>
+                <div class="fort-card-dist">Davangere District</div>
+                <div class="fort-card-badge">📍 7 Points</div>
+            </div>
+        </div>
+        <div class="fort-card" onclick="openFort('bidar')">
+            <div class="fort-card-img">
+                <img src="bidar.jpg.jfif" alt="Bidar Fort">
+                <div class="overlay"></div>
+            </div>
+            <div class="fort-card-body">
+                <div class="fort-card-name">Bidar Fort</div>
+                <div class="fort-card-dist">Bidar District</div>
+                <div class="fort-card-badge">📍 6 Points</div>
+            </div>
+        </div>
+        <div class="fort-card" onclick="openFort('hampi')">
+            <div class="fort-card-img">
+                <img src="hampi.jpg.jfif" alt="Hampi">
+                <div class="overlay"></div>
+            </div>
+            <div class="fort-card-body">
+                <div class="fort-card-name">Hampi Ruins</div>
+                <div class="fort-card-dist">Vijayanagara</div>
+                <div class="fort-card-badge">📍 9 Points</div>
+            </div>
+        </div>
+        <div class="fort-card" style="opacity:0.6;pointer-events:none">
+            <div class="fort-card-img">
+                <img src="bekal.jpg.jfif" alt="Bekal Fort">
+                <div class="overlay"></div>
+            </div>
+            <div class="fort-card-body">
+                <div class="fort-card-name">Bekal Fort</div>
+                <div class="fort-card-dist">Coming Soon</div>
+                <div class="fort-card-badge">🔒 Locked</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section-label">Your Journey</div>
+    <div style="padding:0 16px;display:flex;gap:10px;margin-bottom:16px">
+        <div style="flex:1;background:white;border:1.5px solid var(--parch-mid);border-radius:8px;padding:12px;text-align:center;cursor:pointer" onclick="showChallenge()">
+            <div style="font-family:'Cinzel',serif;font-size:20px;color:var(--gold);font-weight:600" id="challenge-count">3</div>
+            <div style="color:var(--stone-light);font-size:10px;letter-spacing:1px;text-transform:uppercase;margin-top:2px">Challenges</div>
+        </div>
+        <div style="flex:1;background:white;border:1.5px solid var(--parch-mid);border-radius:8px;padding:12px;text-align:center">
+            <div style="font-family:'Cinzel',serif;font-size:20px;color:var(--teal-light);font-weight:600" id="points-count">850</div>
+            <div style="color:var(--stone-light);font-size:10px;letter-spacing:1px;text-transform:uppercase;margin-top:2px">Points</div>
+        </div>
+        <div style="flex:1;background:white;border:1.5px solid var(--parch-mid);border-radius:8px;padding:12px;text-align:center">
+            <div style="font-family:'Cinzel',serif;font-size:20px;color:var(--accent-light);font-weight:600" id="forts-count">2</div>
+            <div style="color:var(--stone-light);font-size:10px;letter-spacing:1px;text-transform:uppercase;margin-top:2px">Forts</div>
+        </div>
+    </div>
+
+    <div style="margin:0 16px 20px;background:linear-gradient(135deg,#2C1E08,#3A2810);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+        <span style="font-size:28px">🧭</span>
+        <div>
+            <div style="font-family:'Cinzel',serif;color:var(--gold);font-size:13px;margin-bottom:3px">Nearby Fort Detected</div>
+            <div style="color:var(--parch-dark);font-size:12px;opacity:0.8">Chitradurga Fort · <span id="fort-distance">Locating...</span></div>
+        </div>
+    </div>
+</div>
+
+<!-- FORT DETAIL WITH REAL MAP -->
+<div id="fort-detail">
+    <div class="fort-detail-header">
+        <div class="back-btn" onclick="goBack()">← All Forts</div>
+        <div class="fort-detail-title" id="fort-detail-title">Chitradurga Fort</div>
+        <div class="fort-detail-sub" id="fort-detail-sub">Tap a beacon to hear its story</div>
+    </div>
+    <div id="real-map"></div>
+    <div class="map-stats">
+        <div class="map-stat"><div class="map-stat-num" id="stat-visited">1/6</div><div class="map-stat-label">VISITED</div></div>
+        <div style="width:1px;background:var(--parch-mid)"></div>
+        <div class="map-stat"><div class="map-stat-num" style="color:var(--gold)" id="stat-unlocked">3</div><div class="map-stat-label">UNLOCKED</div></div>
+        <div style="width:1px;background:var(--parch-mid)"></div>
+        <div class="map-stat"><div class="map-stat-num" style="color:var(--accent-light)" id="stat-distance">0m</div><div class="map-stat-label">WALKED</div></div>
+        <div style="width:1px;background:var(--parch-mid)"></div>
+        <div class="map-stat" onclick="locateMe()" style="cursor:pointer"><div class="map-stat-num" style="color:var(--gold-dark)">📍</div><div class="map-stat-label" style="color:var(--gold-dark)">LOCATE</div></div>
+    </div>
+</div>
+
+<!-- CHALLENGES -->
+<div id="challenge-screen">
+    <div class="challenge-header">
+        <div class="back-btn" style="color:var(--gold);cursor:pointer;margin-bottom:10px" onclick="goBack()">← Back</div>
+        <div class="challenge-title">Photo Challenges</div>
+        <div class="challenge-desc">Complete missions to earn heritage points and unlock hidden stories.</div>
+    </div>
+    <div class="stats-row">
+        <div class="stat-card"><div class="stat-num">850</div><div class="stat-label">Points</div></div>
+        <div class="stat-card"><div class="stat-num" style="color:var(--teal-light)">2/5</div><div class="stat-label">Done</div></div>
+        <div class="stat-card"><div class="stat-num" style="color:var(--accent-light)">🥈</div><div class="stat-label">Rank</div></div>
+    </div>
+    <div class="challenge-list">
+        <div class="challenge-item done">
+            <div class="challenge-emoji">🚪</div>
+            <div><div class="challenge-info-name">The Seven Gates</div><div class="challenge-info-hint">Photograph all 7 entry gates of Chitradurga</div></div>
+            <div class="challenge-done-badge">✓ Done</div>
+        </div>
+        <div class="challenge-item done">
+            <div class="challenge-emoji">💧</div>
+            <div><div class="challenge-info-name">Ancient Water Systems</div><div class="challenge-info-hint">Find the 3 fort water tanks</div></div>
+            <div class="challenge-done-badge">✓ Done</div>
+        </div>
+        <div class="challenge-item" onclick="markDone(this)">
+            <div class="challenge-emoji">⚔️</div>
+            <div><div class="challenge-info-name">Onake Obavva Crevice</div><div class="challenge-info-hint">Find and photograph the legendary Kindi pass</div></div>
+            <div class="challenge-points">+200 pts</div>
+        </div>
+        <div class="challenge-item" onclick="markDone(this)">
+            <div class="challenge-emoji">🌅</div>
+            <div><div class="challenge-info-name">Hilltop Sunset</div><div class="challenge-info-hint">Capture view from the highest battlement</div></div>
+            <div class="challenge-points">+150 pts</div>
+        </div>
+        <div class="challenge-item" onclick="markDone(this)">
+            <div class="challenge-emoji">🪨</div>
+            <div><div class="challenge-info-name">Stone Inscription</div><div class="challenge-info-hint">Photograph the Kannada inscription on east wall</div></div>
+            <div class="challenge-points">+300 pts</div>
+        </div>
+    </div>
+</div>
+
+<!-- PROFILE -->
+<div id="profile-screen">
+    <div style="background:linear-gradient(160deg,#1C1208,#3A2810);padding:30px 20px 24px;text-align:center">
+        <div class="back-btn" style="justify-content:flex-start;margin-bottom:16px" onclick="goBack()">← Back</div>
+        <div style="width:80px;height:80px;border-radius:50%;background:var(--gold-dark);margin:0 auto 12px;display:flex;align-items:center;justify-content:center;border:3px solid var(--gold)">
+            <i class="ti ti-user" style="font-size:36px;color:var(--gold-light)"></i>
+        </div>
+        <div id="profile-name-display" style="font-family:'Cinzel',serif;color:var(--gold);font-size:20px;font-weight:700">Heritage Explorer</div>
+        <div id="profile-email-display" style="color:var(--parch-dark);font-size:13px;margin-top:4px;opacity:0.8">Not registered yet</div>
+        <div style="margin-top:12px;display:inline-flex;align-items:center;gap:6px;background:rgba(201,168,76,0.15);border:1px solid var(--gold-dark);border-radius:20px;padding:4px 14px">
+            <span style="font-size:14px">🥈</span>
+            <span style="font-family:'Cinzel',serif;color:var(--gold);font-size:12px">Silver Explorer</span>
+        </div>
+    </div>
+
+    <div style="margin:16px;background:var(--stone-mid);border-radius:10px;padding:16px">
+        <div style="font-family:'Cinzel',serif;color:var(--gold);font-size:14px;margin-bottom:12px;letter-spacing:0.5px">📝 Register Your Journey</div>
+        <input id="input-name" class="profile-input" type="text" placeholder="Your Full Name">
+        <input id="input-email" class="profile-input" type="email" placeholder="Email Address">
+        <input id="input-phone" class="profile-input" type="tel" placeholder="Phone Number">
+        <input id="input-city" class="profile-input" type="text" placeholder="Your City">
+        <button class="save-btn" onclick="saveProfile()">💾 SAVE PROFILE</button>
+    </div>
+
+    <div style="font-family:'Cinzel',serif;font-size:11px;letter-spacing:2px;color:var(--stone-light);text-transform:uppercase;padding:8px 20px">Heritage Stats</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px">
+        <div style="background:var(--stone-mid);border-radius:8px;padding:14px;text-align:center">
+            <div style="font-family:'Cinzel',serif;font-size:24px;color:var(--gold);font-weight:600" id="p-points">850</div>
+            <div style="color:var(--stone-light);font-size:10px;letter-spacing:1px;text-transform:uppercase;margin-top:2px">Total Points</div>
+        </div>
+        <div style="background:var(--stone-mid);border-radius:8px;padding:14px;text-align:center">
+            <div style="font-family:'Cinzel',serif;font-size:24px;color:var(--teal-light);font-weight:600">2</div>
+            <div style="color:var(--stone-light);font-size:10px;letter-spacing:1px;text-transform:uppercase;margin-top:2px">Forts Visited</div>
+        </div>
+        <div style="background:var(--stone-mid);border-radius:8px;padding:14px;text-align:center">
+            <div style="font-family:'Cinzel',serif;font-size:24px;color:var(--accent-light);font-weight:600">5</div>
+            <div style="color:var(--stone-light);font-size:10px;letter-spacing:1px;text-transform:uppercase;margin-top:2px">Stories Heard</div>
+        </div>
+        <div style="background:var(--stone-mid);border-radius:8px;padding:14px;text-align:center">
+            <div style="font-family:'Cinzel',serif;font-size:24px;color:var(--gold-light);font-weight:600">2/5</div>
+            <div style="color:var(--stone-light);font-size:10px;letter-spacing:1px;text-transform:uppercase;margin-top:2px">Challenges</div>
+        </div>
+    </div>
+
+    <div style="font-family:'Cinzel',serif;font-size:11px;letter-spacing:2px;color:var(--stone-light);text-transform:uppercase;padding:16px 20px 8px">Journey History</div>
+    <div style="padding:0 16px">
+        <div style="background:var(--stone-mid);border-radius:8px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px">
+            <div style="width:44px;height:44px;border-radius:8px;overflow:hidden;flex-shrink:0">
+                <img src="chitradurga.jpg.jfif" style="width:100%;height:100%;object-fit:cover">
+            </div>
+            <div style="flex:1">
+                <div style="font-family:'Cinzel',serif;color:var(--parch);font-size:13px">Chitradurga Fort</div>
+                <div style="color:var(--stone-light);font-size:11px;margin-top:2px">3 beacons · 240m walked</div>
+                <div style="color:var(--stone-light);font-size:10px;margin-top:2px">📅 Last visited: Today</div>
+            </div>
+            <div style="background:rgba(201,168,76,0.15);border-radius:20px;padding:4px 10px;color:var(--gold);font-size:11px;font-family:'Cinzel',serif">+450 pts</div>
+        </div>
+        <div style="background:var(--stone-mid);border-radius:8px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px">
+            <div style="width:44px;height:44px;border-radius:8px;overflow:hidden;flex-shrink:0">
+                <img src="bidar.jpg.jfif" style="width:100%;height:100%;object-fit:cover">
+            </div>
+            <div style="flex:1">
+                <div style="font-family:'Cinzel',serif;color:var(--parch);font-size:13px">Bidar Fort</div>
+                <div style="color:var(--stone-light);font-size:11px;margin-top:2px">2 beacons · 180m walked</div>
+                <div style="color:var(--stone-light);font-size:10px;margin-top:2px">📅 Last visited: Yesterday</div>
+            </div>
+            <div style="background:rgba(201,168,76,0.15);border-radius:20px;padding:4px 10px;color:var(--gold);font-size:11px;font-family:'Cinzel',serif">+400 pts</div>
+        </div>
+        <div style="background:var(--stone-mid);border-radius:8px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px;opacity:0.5">
+            <div style="width:44px;height:44px;border-radius:8px;background:var(--stone);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                <i class="ti ti-lock" style="color:var(--stone-light);font-size:20px"></i>
+            </div>
+            <div style="flex:1">
+                <div style="font-family:'Cinzel',serif;color:var(--parch);font-size:13px">Hampi Ruins</div>
+                <div style="color:var(--stone-light);font-size:11px;margin-top:2px">Not yet visited</div>
+            </div>
+            <div style="background:var(--stone);border-radius:20px;padding:4px 10px;color:var(--stone-light);font-size:11px;font-family:'Cinzel',serif">Locked</div>
+        </div>
+    </div>
+
+    <div style="font-family:'Cinzel',serif;font-size:11px;letter-spacing:2px;color:var(--stone-light);text-transform:uppercase;padding:16px 20px 8px">Exploration Progress</div>
+    <div style="padding:0 16px 20px">
+        <div style="background:var(--stone-mid);border-radius:8px;padding:16px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+                <span style="font-family:'Cinzel',serif;color:var(--parch);font-size:12px">Chitradurga</span>
+                <span style="color:var(--gold);font-size:12px">60%</span>
+            </div>
+            <div style="background:var(--stone);height:6px;border-radius:3px;margin-bottom:12px">
+                <div style="width:60%;height:100%;background:linear-gradient(90deg,var(--gold-dark),var(--gold));border-radius:3px"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+                <span style="font-family:'Cinzel',serif;color:var(--parch);font-size:12px">Bidar Fort</span>
+                <span style="color:var(--teal-light);font-size:12px">40%</span>
+            </div>
+            <div style="background:var(--stone);height:6px;border-radius:3px;margin-bottom:12px">
+                <div style="width:40%;height:100%;background:linear-gradient(90deg,var(--teal-fort),var(--teal-light));border-radius:3px"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+                <span style="font-family:'Cinzel',serif;color:var(--parch);font-size:12px">Hampi Ruins</span>
+                <span style="color:var(--stone-light);font-size:12px">0%</span>
+            </div>
+            <div style="background:var(--stone);height:6px;border-radius:3px">
+                <div style="width:0%;height:100%;background:var(--accent);border-radius:3px"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- NEARBY BANNER -->
+<div id="nearby-banner">
+    <span style="font-size:24px">📍</span>
+    <div>
+        <div style="font-family:'Cinzel',serif;color:var(--gold);font-size:13px">You are near!</div>
+        <div style="color:var(--parch-dark);font-size:12px" id="nearby-name"></div>
+    </div>
+    <span style="margin-left:auto;color:var(--gold);cursor:pointer;font-size:18px" onclick="document.getElementById('nearby-banner').style.display='none'">✕</span>
+</div>
+
+<!-- STORY PANEL -->
+<div id="story-panel">
+    <div class="panel-handle"></div>
+    <div class="panel-header">
+        <div class="panel-icon"><i class="ti ti-book" id="panel-poi-icon"></i></div>
+        <div>
+            <div class="panel-title" id="panel-poi-name">Story</div>
+            <div class="panel-subtitle" id="panel-poi-type">Historical Landmark</div>
+        </div>
+    </div>
+    <div class="lang-toggle">
+        <button class="lang-btn active" onclick="setLang('en',this)">English</button>
+        <button class="lang-btn" onclick="setLang('kn',this)">ಕನ್ನಡ</button>
+    </div>
+    <div class="panel-body">
+        <div class="story-text" id="story-text-content">Loading...</div>
+    </div>
+    <div class="panel-actions">
+        <button class="audio-btn" id="audio-btn" onclick="toggleAudio()">
+            <div class="audio-wave" id="audio-wave-el"><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div></div>
+            <span id="audio-btn-label">▶ Play Audio</span>
+        </button>
+        <button class="close-btn" onclick="closeStory()">✕</button>
+    </div>
+</div>
+
+<!-- NAV BAR -->
+<div class="nav-bar">
+    <div class="nav-item active" id="nav-home" onclick="showHome()"><i class="ti ti-home"></i><span>Home</span></div>
+    <div class="nav-item" id="nav-map" onclick="showMap()"><i class="ti ti-map-2"></i><span>Map</span></div>
+    <div class="nav-item" id="nav-challenge" onclick="showChallenge()"><i class="ti ti-camera"></i><span>Challenges</span></div>
+    <div class="nav-item" id="nav-profile" onclick="showProfile()"><i class="ti ti-user-circle"></i><span>Profile</span></div>
+</div>
+
+<script>
+    const stories={
+      gate:{name:'Main Gate (Meragina Baagilu)',type:'Fortified Entry · 8 layers deep',icon:'ti-door-enter',
+        en:`<strong>The Gate of Seven Secrets</strong><br><br>The main entrance of Chitradurga Fort is not merely a door — it is a defensive labyrinth. Built by Madakari Nayaka in the 1770s, this gate features seven successive turns designed to slow invading armies. Elephants could not charge in a straight line; archers above picked off enemies at every bend.`,
+        kn:`<strong>ಏಳು ರಹಸ್ಯಗಳ ದ್ವಾರ</strong><br><br>ಚಿತ್ರದುರ್ಗ ಕೋಟೆಯ ಮುಖ್ಯ ದ್ವಾರವು ಕೇವಲ ಒಂದು ಬಾಗಿಲಲ್ಲ — ಇದು ಒಂದು ರಕ್ಷಣಾ ಚಕ್ರವ್ಯೂಹ. ಮದಕರಿ ನಾಯಕರಿಂದ ನಿರ್ಮಿಸಲ್ಪಟ್ಟ ಈ ದ್ವಾರವು ಏಳು ತಿರುವುಗಳನ್ನು ಹೊಂದಿದೆ.`},
+      onake:{name:'Onake Obavva Kindi',type:'Heroic Legend · 1779 CE',icon:'ti-sword',
+        en:`<strong>The Warrior of the Pestle</strong><br><br>Here, in this narrow crevice, one woman changed history. In 1779, Hyder Ali's forces found a gap in the fort walls. One by one, soldiers crawled through. Obavva, wife of a guard, struck down each soldier with only her onake — a wooden pestle — until the fort was saved.`,
+        kn:`<strong>ಒನಕೆಯ ವೀರ ಮಹಿಳೆ</strong><br><br>ಇಲ್ಲಿ ಒಬ್ಬ ಮಹಿಳೆ ಇತಿಹಾಸದ ಗತಿಯನ್ನೇ ಬದಲಿಸಿದಳು. ೧೭೭೯ ರಲ್ಲಿ, ಹೈದರ್ ಅಲಿಯ ಸೈನಿಕರು ಕೋಟೆಯ ಸಂದನ್ನು ಕಂಡರು. ಒನಕೆ ಅಮ್ಮ ತನ್ನ ಒನಕೆಯಿಂದ ಪ್ರತಿಯೊಬ್ಬ ಸೈನಿಕನನ್ನೂ ಮಣಿಸಿದಳು.`},
+      temple:{name:'Hidimbeshwara Temple',type:'Ancient Temple · 9th Century CE',icon:'ti-building-community',
+        en:`<strong>The Temple That Survived Sieges</strong><br><br>The Hidimbeshwara Temple sits at the highest point of the fort — worshipped by Nayaka kings before every battle. Blending Dravidian and Hoysala architecture, it has stood for over 1,100 years through wars, sieges and time itself.`,
+        kn:`<strong>ಯುದ್ಧಗಳಲ್ಲಿ ಉಳಿದ ದೇವಾಲಯ</strong><br><br>ಹಿಡಿಂಬೇಶ್ವರ ದೇವಾಲಯವು ಕೋಟೆಯ ಅತ್ಯುನ್ನತ ಸ್ಥಳದಲ್ಲಿದೆ. ನಾಯಕ ರಾಜರು ಪ್ರತಿ ಯುದ್ಧಕ್ಕೆ ಮೊದಲು ಇಲ್ಲಿ ಪ್ರಾರ್ಥಿಸುತ್ತಿದ್ದರು. ಇದು ೧,೧೦೦ ವರ್ಷಗಳಿಗೂ ಹೆಚ್ಚು ಕಾಲ ನಿಂತಿದೆ.`},
+      tank:{name:'Fort Water Tank',type:'Engineering Marvel · 16th Century',icon:'ti-droplet',
+        en:`<strong>Ancient Water Engineering</strong><br><br>This underground tank sustained 10,000 soldiers for 6 months during a siege — built without cement, using only interlocking granite blocks. The ingenious design collects rain from the entire hillside. Even today it retains water through summer.`,
+        kn:`<strong>ಪ್ರಾಚೀನ ಜಲ ಎಂಜಿನಿಯರಿಂಗ್</strong><br><br>ಈ ಭೂಗತ ತೊಟ್ಟಿ ೧೦,೦೦೦ ಸೈನಿಕರಿಗೆ ೬ ತಿಂಗಳು ನೀರು ಸರಬರಾಜು ಮಾಡಬಲ್ಲದಾಗಿತ್ತು. ಸಿಮೆಂಟ್ ಇಲ್ಲದೆ ನಿರ್ಮಿಸಲಾಗಿದ್ದ ಇದು ಇಂದಿಗೂ ನೀರು ಉಳಿಸಿಕೊಳ್ಳುತ್ತದೆ.`},
+      cannon:{name:'Cannon Post',type:'Military Fortification · 18th Century',icon:'ti-candle',
+        en:`<strong>The Fort's Last Defense</strong><br><br>This elevated cannon post commanded a 180-degree view of the plains below. The cannons here were cast locally using a technique unique to the Nayaka era — an alloy of iron and bronze that resisted cracking under repeated fire.`,
+        kn:`<strong>ಕೋಟೆಯ ಕೊನೆಯ ರಕ್ಷಣೆ</strong><br><br>ಈ ಎತ್ತರದ ಫಿರಂಗಿ ಪೋಸ್ಟ್ ಕೆಳಗಿನ ಬಯಲಿನ ೧೮೦ ಡಿಗ್ರಿ ನೋಟವನ್ನು ಹೊಂದಿತ್ತು. ಇಲ್ಲಿನ ಫಿರಂಗಿಗಳನ್ನು ನಾಯಕ ಯುಗದ ವಿಶೇಷ ತಂತ್ರಜ್ಞಾನದಿಂದ ತಯಾರಿಸಲಾಗಿತ್ತು.`},
+      palace:{name:'Nayaka Palace Ruins',type:'Royal Residence · 17th Century',icon:'ti-building',
+        en:`<strong>Echoes of Royalty</strong><br><br>The Nayaka Palace once housed the rulers of Chitradurga in grand style. Though now in ruins, the intricate stone carvings and the layout of the durbar hall speak of a civilization that blended military might with artistic refinement.`,
+        kn:`<strong>ರಾಜಮನೆತನದ ಪ್ರತಿಧ್ವನಿಗಳು</strong><br><br>ನಾಯಕ ಅರಮನೆ ಒಂದು ಕಾಲದಲ್ಲಿ ಚಿತ್ರದುರ್ಗದ ಆಡಳಿತಗಾರರ ವಾಸಸ್ಥಾನವಾಗಿತ್ತು. ಈಗ ಅವಶೇಷಗಳಾಗಿದ್ದರೂ, ಕಲ್ಲಿನ ಕೆತ್ತನೆಗಳು ಆ ಸಾಮ್ರಾಜ್ಯದ ವೈಭವವನ್ನು ಸಾರುತ್ತವೆ.`}
+    };
+
+    const fortData={
+      chitradurga:{
+        center:[14.2308,76.3980],zoom:16,
+        pois:[
+          {id:'gate',lat:14.2285,lng:76.3962,name:'Main Gate',icon:'🚪',status:'visited'},
+          {id:'onake',lat:14.2295,lng:76.3975,name:'Onake Kindi',icon:'⚔️',status:'unlocked'},
+          {id:'temple',lat:14.2310,lng:76.3990,name:'Hidimbeshwara',icon:'🛕',status:'unlocked'},
+          {id:'tank',lat:14.2320,lng:76.3998,name:'Fort Tank',icon:'💧',status:'unlocked'},
+          {id:'cannon',lat:14.2330,lng:76.4005,name:'Cannon Post',icon:'🔒',status:'locked'},
+          {id:'palace',lat:14.2298,lng:76.3968,name:'Palace Ruins',icon:'🔒',status:'locked'}
+        ]
+      },
+      bidar:{
+        center:[17.9142,77.5194],zoom:16,
+        pois:[
+          {id:'gate',lat:17.9135,lng:77.5180,name:'Main Darwaza',icon:'🚪',status:'visited'},
+          {id:'onake',lat:17.9148,lng:77.5195,name:'Rangin Mahal',icon:'🏛️',status:'unlocked'},
+          {id:'temple',lat:17.9155,lng:77.5205,name:'Solah Khamba',icon:'🕌',status:'unlocked'},
+          {id:'tank',lat:14.2320,lng:76.3998,name:'Karez System',icon:'💧',status:'locked'},
+          {id:'cannon',lat:17.9128,lng:77.5170,name:'Cannon Bastion',icon:'🔒',status:'locked'},
+          {id:'palace',lat:17.9160,lng:77.5210,name:'Takht Mahal',icon:'🔒',status:'locked'}
+        ]
+      },
+      hampi:{
+        center:[15.3350,76.4600],zoom:15,
+        pois:[
+          {id:'gate',lat:15.3355,lng:76.4598,name:'Virupaksha Temple',icon:'🛕',status:'visited'},
+          {id:'onake',lat:15.3368,lng:76.4612,name:'Vittala Temple',icon:'🏛️',status:'unlocked'},
+          {id:'temple',lat:15.3342,lng:76.4585,name:'Hampi Bazaar',icon:'🏪',status:'unlocked'},
+          {id:'tank',lat:15.3380,lng:76.4625,name:'Royal Enclosure',icon:'👑',status:'unlocked'},
+          {id:'cannon',lat:15.3325,lng:76.4570,name:'Elephant Stables',icon:'🐘',status:'locked'},
+          {id:'palace',lat:15.3395,lng:76.4638,name:'Lotus Mahal',icon:'🔒',status:'locked'}
+        ]
+      }
+    };
+
+    let map=null,currentFort='chitradurga',currentStory=null,currentLang='en',audioPlaying=false;
+    let userMarker=null,watchId=null,routeLines=[];
+
+    function initMap(fortName){
+      if(map){map.remove();map=null}
+      const fd=fortData[fortName];
+      setTimeout(()=>{
+        map=L.map('real-map',{zoomControl:true,attributionControl:false}).setView(fd.center,fd.zoom);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
+
+        // Add POI markers
+        fd.pois.forEach(poi=>{
+          const color=poi.status==='visited'?'#2D7A6A':poi.status==='unlocked'?'#C9A84C':'#888888';
+          const markerHtml=`<div style="background:${color};border:2px solid ${poi.status==='locked'?'#555':'#8B6914'};border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 2px 6px rgba(0,0,0,0.4);cursor:pointer;opacity:${poi.status==='locked'?0.6:1}">${poi.icon}</div>`;
+          const icon=L.divIcon({html:markerHtml,iconSize:[32,32],iconAnchor:[16,16],className:''});
+          const marker=L.marker([poi.lat,poi.lng],{icon}).addTo(map);
+          if(poi.status!=='locked'){
+            marker.on('click',()=>openStory(poi.id));
+            marker.bindTooltip(`<span style="font-family:Cinzel,serif;font-size:11px;color:#C9A84C">${poi.name}</span>`,{permanent:false,direction:'top',className:'leaflet-tooltip'});
+          }
+        });
+
+        // Draw route between unlocked pois
+        const unlocked=fd.pois.filter(p=>p.status!=='locked');
+        if(unlocked.length>1){
+          const coords=unlocked.map(p=>[p.lat,p.lng]);
+          L.polyline(coords,{color:'#C9A84C',weight:2,dashArray:'6,4',opacity:0.7}).addTo(map);
+        }
+
+        // Start GPS tracking
+        startGPS();
+        map.invalidateSize();
+      },300);
+    }
+
+    function startGPS(){
+      if(navigator.geolocation){
+        watchId=navigator.geolocation.watchPosition(pos=>{
+          const lat=pos.coords.latitude;
+          const lng=pos.coords.longitude;
+          updateUserLocation(lat,lng);
+        },{enableHighAccuracy:true,maximumAge:5000,timeout:10000});
+      }
+    }
+
+    function locateMe(){
+      if(navigator.geolocation){
+        navigator.geolocation.getCurrentPosition(pos=>{
+          const lat=pos.coords.latitude;
+          const lng=pos.coords.longitude;
+          if(map)map.setView([lat,lng],17);
+          updateUserLocation(lat,lng);
+        },{enableHighAccuracy:true});
+      }
+    }
+
+    function updateUserLocation(lat,lng){
+      if(!map)return;
+      if(userMarker){map.removeLayer(userMarker)}
+      const userIcon=L.divIcon({
+        html:`<div style="width:16px;height:16px;background:#C42B2B;border:3px solid white;border-radius:50%;box-shadow:0 0 8px rgba(196,43,43,0.8)"></div>`,
+        iconSize:[16,16],iconAnchor:[8,8],className:''
+      });
+      userMarker=L.marker([lat,lng],{icon:userIcon}).addTo(map);
+      userMarker.bindTooltip('<span style="font-family:Cinzel,serif;font-size:11px">You are here</span>',{permanent:true,direction:'top',className:'leaflet-tooltip'});
+      checkNearbyPOIs(lat,lng);
+      updateDistanceBanner(lat,lng);
+    }
+
+    function checkNearbyPOIs(lat,lng){
+      const fd=fortData[currentFort];
+      fd.pois.forEach(poi=>{
+        if(poi.status==='locked')return;
+        const dist=getDistance(lat,lng,poi.lat,poi.lng);
+        if(dist<80){
+          const banner=document.getElementById('nearby-banner');
+          const bannerName=document.getElementById('nearby-name');
+          if(banner&&bannerName){
+            bannerName.textContent=poi.name+' — '+Math.round(dist)+'m away';
+            banner.style.display='flex';
+            setTimeout(()=>banner.style.display='none',5000);
+          }
+        }
+      });
+    }
+
+    function getDistance(lat1,lng1,lat2,lng2){
+      const R=6371000,dLat=(lat2-lat1)*Math.PI/180,dLng=(lng2-lng1)*Math.PI/180;
+      const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+      return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+    }
+
+    function updateDistanceBanner(lat,lng){
+      const fd=fortData[currentFort];
+      const dist=getDistance(lat,lng,fd.center[0],fd.center[1]);
+      const el=document.getElementById('fort-distance');
+      if(el)el.textContent=dist<1000?Math.round(dist)+'m away':(dist/1000).toFixed(1)+'km away';
+    }
+
+    function showHome(){
+      hideAll();
+      document.getElementById('home').style.display='flex';
+      setActiveNav('nav-home');
+      if(watchId){navigator.geolocation.clearWatch(watchId);watchId=null}
+    }
+    function showMap(){openFort(currentFort)}
+    function showChallenge(){
+      hideAll();
+      document.getElementById('challenge-screen').style.display='flex';
+      setActiveNav('nav-challenge');
+    }
+    function showProfile(){
+      hideAll();
+      document.getElementById('profile-screen').style.display='flex';
+      setActiveNav('nav-profile');
+      loadProfile();
+    }
+    function hideAll(){
+      ['splash','home','fort-detail','challenge-screen','profile-screen'].forEach(id=>{
+        const el=document.getElementById(id);
+        if(el)el.style.display='none';
+      });
+      closeStory();
+    }
+    function openFort(name){
+      currentFort=name;
+      hideAll();
+      document.getElementById('fort-detail').style.display='flex';
+      const titles={chitradurga:'Chitradurga Fort',bidar:'Bidar Fort',hampi:'Hampi Ruins'};
+      document.getElementById('fort-detail-title').textContent=titles[name]||name;
+      document.getElementById('fort-detail-sub').textContent='Tap a beacon · Real GPS tracking active';
+      setActiveNav('nav-map');
+      initMap(name);
+    }
+    function goBack(){showHome()}
+    function setActiveNav(id){
+      document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+      const el=document.getElementById(id);
+      if(el)el.classList.add('active');
+    }
+
+    function openStory(key){
+      const s=stories[key];if(!s)return;
+      currentStory=key;currentLang='en';
+      document.getElementById('panel-poi-name').textContent=s.name;
+      document.getElementById('panel-poi-type').textContent=s.type;
+      document.getElementById('panel-poi-icon').className='ti '+s.icon;
+      document.getElementById('story-text-content').innerHTML=s.en;
+      document.querySelectorAll('.lang-btn').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('.lang-btn')[0].classList.add('active');
+      document.getElementById('story-panel').classList.add('open');
+      if(audioPlaying)stopAudio();
+    }
+    function closeStory(){
+      document.getElementById('story-panel').classList.remove('open');
+      stopAudio();
+    }
+    function setLang(lang,btn){
+      currentLang=lang;
+      document.querySelectorAll('.lang-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      if(currentStory){
+        document.getElementById('story-text-content').innerHTML=stories[currentStory][lang]||stories[currentStory].en;
+      }
+    }
+    function toggleAudio(){
+      audioPlaying=!audioPlaying;
+      if(audioPlaying){
+        document.getElementById('audio-btn').classList.add('playing');
+        document.getElementById('audio-wave-el').classList.remove('paused');
+        document.getElementById('audio-btn-label').textContent='⏸ Playing...';
+      }else{stopAudio()}
+    }
+    function stopAudio(){
+      audioPlaying=false;
+      document.getElementById('audio-btn')?.classList.remove('playing');
+      document.getElementById('audio-wave-el')?.classList.add('paused');
+      const l=document.getElementById('audio-btn-label');
+      if(l)l.textContent='▶ Play Audio';
+    }
+    function markDone(el){
+      if(el.classList.contains('done'))return;
+      el.classList.add('done');
+      const pts=el.querySelector('.challenge-points');
+      if(pts)pts.outerHTML='<div class="challenge-done-badge">✓ Done</div>';
+    }
+    function saveProfile(){
+      const name=document.getElementById('input-name').value.trim();
+      const email=document.getElementById('input-email').value.trim();
+      const phone=document.getElementById('input-phone').value.trim();
+      const city=document.getElementById('input-city').value.trim();
+      if(!name||!email){alert('Please enter your name and email!');return;}
+      localStorage.setItem('kk_name',name);
+      localStorage.setItem('kk_email',email);
+      localStorage.setItem('kk_phone',phone);
+      localStorage.setItem('kk_city',city);
+      document.getElementById('profile-name-display').textContent=name;
+      document.getElementById('profile-email-display').textContent=email+(city?' · '+city:'');
+      alert('✅ Profile saved successfully!');
+    }
+    function loadProfile(){
+      const name=localStorage.getItem('kk_name');
+      const email=localStorage.getItem('kk_email');
+      const phone=localStorage.getItem('kk_phone');
+      const city=localStorage.getItem('kk_city');
+      if(name){
+        document.getElementById('profile-name-display').textContent=name;
+        document.getElementById('input-name').value=name;
+      }
+      if(email){
+        document.getElementById('profile-email-display').textContent=email+(city?' · '+city:'');
+        document.getElementById('input-email').value=email;
+      }
+      if(phone)document.getElementById('input-phone').value=phone;
+      if(city)document.getElementById('input-city').value=city;
+    }
+</script>
+</body>
+</html>
