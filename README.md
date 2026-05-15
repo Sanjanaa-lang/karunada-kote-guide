@@ -15,7 +15,7 @@ A location-aware Android heritage tourism app that acts as a **Virtual Historian
 
 | Bekal Fort Inside Story | Hampi Ruins Map | Hampi Inside Story | photo challenge
 |---|---|---|
-| ![BekalIn](screenshots/bekal_inside_location.jpeg) | ![Hampi](screenshots/hampi_fort.jpeg) | ![HampiIn](screenshots/hampi_inside_location.jpeg) | ![photochallenge](screenshots/poto_challenge.jpeg)
+| ![BekalIn](screenshots/bekal_inside_location.jpeg) | ![Hampi](screenshots/hampi_fort.jpeg) | ![HampiIn](screenshots/hampi_inside_location.jpeg) | ![photochallenge](screenshots/poto_challenge.jpeg) |
 
 | Google Developer Profile | GDP Codelabs Page 1 | GDP Codelabs Page 2 |
 |---|---|---|
